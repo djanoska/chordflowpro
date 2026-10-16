@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChordFlow 1.2 – TempoCoach Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-outer: #e5e0d5;
+      --card-bg: linear-gradient(180deg, #f8f6f0 0%, #ece6da 100%);
+      --arch-bg: #f7f4ed;
+      --gold-primary: #c19526;
+      --gold-gradient: radial-gradient(circle at 35% 30%, #f6cf6a 0%, #c4962d 60%, #986f18 100%);
+      --gold-border: #bca068;
+      --gold-dark: #8c6e28;
+      --text-main: #18140f;
+      --text-muted: #8c8273;
+      --text-gold: #b38528;
+      --sunken-dot: #ded7c7;
+      --arrow-down: #dc5959;
+      --arrow-up: #4a90e2;
+      --border-soft: rgba(188, 160, 104, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-outer);
+      background-image: radial-gradient(circle at 50% 30%, #f0ece3 0%, #dbd6cb 100%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+
+    /* Fő eszköz kártya */
+    .tc-card {
+      width: 100%;
+      max-width: 440px;
+      min-height: 760px;
+      background: var(--card-bg);
+      border-radius: 46px;
+      padding: 2.2rem 1.6rem 1.4rem;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        0 30px 60px -12px rgba(115, 95, 70, 0.35),
+        0 12px 25px -4px rgba(115, 95, 70, 0.18),
+        inset 0 1px 3px rgba(255, 255, 255, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Fejléc */
+    .tc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.3rem 1.2rem;
+    }
+
+    .tc-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tc-logo h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.85rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #17130e;
+      line-height: 1;
+    }
+
+    .tc-logo h1 span {
+      color: var(--text-gold);
+    }
+
+    .version-pill {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--gold-dark);
+      border: 1.5px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 0.12rem 0.4rem;
+      line-height: 1.1;
+      transform: translateY(-2px);
+    }
+
+    .speaker-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f7f4ed;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        3px 4px 8px rgba(120, 100, 75, 0.15),
+        -3px -3px 6px rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #7d96b8;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .speaker-btn:active {
+      box-shadow: inset 2px 2px 5px rgba(120, 100, 75, 0.2);
+    }
+
+    .speaker-btn.muted {
+      color: #d15151;
+    }
+
+    /* Nézetek konténere */
+    .view-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .view-page {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .view-page.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 1. OLDAL: Boltíves vitrin kamra (Arch Window) */
+    .tc-arch-container {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      background: var(--arch-bg);
+      border-top-left-radius: 200px;
+      border-top-right-radius: 200px;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      border: 2px solid var(--gold-border);
+      box-shadow: 
+        inset 0 10px 18px rgba(70, 55, 35, 0.12),
+        inset 0 2px 5px rgba(70, 55, 35, 0.08),
+        0 2px 4px rgba(255, 255, 255, 0.9);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 1.5rem 1.2rem 1rem;
+    }
+
+    .arch-track-curve {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      height: 180px;
+      border-top: 1.5px dashed rgba(188, 160, 104, 0.45);
+      border-radius: 50% / 100% 100% 0 0;
+      pointer-events: none;
+    }
+
+    .arch-chord-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .chord-big {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 4.8rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #17130e;
+      text-shadow: 0 2px 4px rgba(188, 160, 104, 0.25);
+      transition: transform 0.08s ease;
+      min-height: 1.1em;
+      display: flex;
+      align-items: center;
+    }
+
+    .next-pill {
+      margin-top: 0.35rem;
+      background: #fcfbf8;
+      border: 1.5px solid var(--gold-border);
+      padding: 0.25rem 0.8rem;
+      border-radius: 9999px;
+      box-shadow: 0 2px 5px rgba(140, 110, 40, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .next-pill span.lbl {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      letter-spacing: 0.6px;
+    }
+
+    .next-pill span.val {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #17130e;
+    }
+
+    .arch-diagram-side {
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Süllyesztett ütéspontok és nyilak */
+    .tc-strum-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.4rem 0.6rem 1.1rem;
+    }
+
+    .strum-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .recessed-dot {
+      border-radius: 50%;
+      background: var(--sunken-dot);
+      box-shadow: 
+        inset 1.5px 2px 4px rgba(75, 60, 40, 0.4),
+        inset -1px -1px 2px rgba(255, 255, 255, 0.9);
+      transition: all 0.09s ease;
+    }
+
+    .strum-column.large .recessed-dot {
+      width: 19px;
+      height: 19px;
+    }
+
+    .strum-column.small .recessed-dot {
+      width: 14px;
+      height: 14px;
+    }
+
+    .strum-column.active .recessed-dot {
+      background: radial-gradient(circle, #fff3a8 10%, #d8a52c 70%, #9e741c 100%);
+      box-shadow: 
+        0 0 12px rgba(216, 165, 44, 0.85),
+        0 0 4px #c19526,
+        inset 0 1px 2px rgba(255, 255, 255, 0.9);
+      transform: scale(1.22);
+    }
+
+    .arrow-icon {
+      font-size: 1.25rem;
+      font-weight: 900;
+      line-height: 1;
+      transition: transform 0.09s ease;
+    }
+
+    .arrow-icon.down { color: var(--arrow-down); }
+    .arrow-icon.up { color: var(--arrow-up); }
+    .arrow-icon.rest { color: #b5ad9e; font-size: 1rem; }
+
+    .strum-column.active .arrow-icon {
+      transform: scale(1.25);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+
+    /* Süllyesztett tempó kapszula */
+    .tc-tempo-capsule {
+      margin: 0.2rem 0 1.3rem;
+      background: #ece7dc;
+      border-radius: 28px;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 
+        inset 2px 3px 6px rgba(75, 60, 40, 0.16),
+        inset -2px -3px 6px rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(220, 210, 195, 0.4);
+    }
+
+    .nudge-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: #f7f4ed;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        2.5px 3.5px 7px rgba(115, 95, 70, 0.16),
+        -2px -2px 5px rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #17130e;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .nudge-btn:active {
+      box-shadow: inset 2px 2px 4px rgba(100, 80, 55, 0.25);
+      transform: scale(0.97);
+    }
+
+    .tempo-number-display {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: #17130e;
+      letter-spacing: -1px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* Fő akciógombok */
+    .tc-action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.1rem 1.4rem;
+    }
+
+    .pill-btn {
+      width: 98px;
+      height: 64px;
+      background: #f6f3eb;
+      border-radius: 20px;
+      border: 1px solid rgba(225, 215, 200, 0.7);
+      box-shadow: 
+        3px 4.5px 9px rgba(120, 100, 75, 0.14),
+        -3px -3px 7px rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .pill-btn:active {
+      box-shadow: inset 2px 2px 5px rgba(120, 100, 75, 0.2);
+    }
+
+    .pill-btn .tag {
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #8c8273;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .pill-btn .val {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #17130e;
+      white-space: nowrap;
+    }
+
+    .play-gold-btn {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: var(--gold-gradient);
+      border: 2px solid rgba(255, 240, 185, 0.65);
+      box-shadow: 
+        0 10px 22px rgba(175, 130, 40, 0.45),
+        0 3px 6px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.8),
+        inset 0 -3px 5px rgba(120, 80, 10, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .play-gold-btn:active {
+      transform: scale(0.95);
+    }
+
+    .play-icon-shape {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 20px;
+      border-color: transparent transparent transparent #221606;
+      margin-left: 4px;
+    }
+
+    .play-gold-btn.running .play-icon-shape {
+      width: 16px;
+      height: 20px;
+      border: none;
+      background: #221606;
+      border-radius: 2px;
+      margin-left: 0;
+    }
+
+    /* 2. ALOLDALAK: METER & SUBDIVISION, PRACTICE, SETTINGS */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.2rem 0.8rem;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #17130e;
+    }
+
+    .close-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f7f4ed;
+      border: 1px solid rgba(188, 160, 104, 0.4);
+      box-shadow: 1.5px 2px 5px rgba(120, 100, 75, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #6e6454;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .page-divider {
+      height: 1px;
+      background: rgba(188, 160, 104, 0.3);
+      margin-bottom: 1.2rem;
+    }
+
+    .section-title {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #8c8273;
+      letter-spacing: 0.6px;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Beat Pattern körök */
+    .beat-pattern-row {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .pattern-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #f7f4ed;
+      border: 1px solid rgba(188, 160, 104, 0.4);
+      box-shadow: 2px 3px 6px rgba(110, 90, 65, 0.12), -2px -2px 4px rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .pattern-circle.active {
+      background: #fdfaf3;
+      border: 2px solid var(--gold-primary);
+      box-shadow: 0 0 10px rgba(193, 149, 38, 0.35);
+    }
+
+    .pattern-circle .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #17130e;
+      line-height: 1;
+    }
+
+    .pattern-circle.active .num {
+      color: var(--gold-dark);
+    }
+
+    .pattern-circle .sym {
+      font-size: 0.65rem;
+      color: var(--gold-dark);
+      margin-top: 1px;
+    }
+
+    /* 3-hasábos gomb rácsok */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .grid-pill {
+      background: #f6f3eb;
+      border: 1px solid rgba(215, 200, 180, 0.6);
+      border-radius: 14px;
+      padding: 0.7rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 2px 3px 6px rgba(120, 100, 75, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.9);
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .grid-pill:active {
+      transform: scale(0.98);
+    }
+
+    .grid-pill.active {
+      background: var(--gold-primary);
+      border-color: var(--gold-dark);
+      box-shadow: 0 4px 10px rgba(193, 149, 38, 0.4);
+    }
+
+    .grid-pill .p-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #17130e;
+      line-height: 1.1;
+    }
+
+    .grid-pill.active .p-title {
+      color: #fff;
+    }
+
+    .grid-pill .p-sub {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #8c8273;
+      margin-top: 2px;
+    }
+
+    .grid-pill.active .p-sub {
+      color: #fbf5e6;
+    }
+
+    /* Form elemek */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .form-group label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #8c8273;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group select, .form-group input[type="text"] {
+      background: #f7f4ed;
+      border: 1.5px solid var(--gold-border);
+      border-radius: 14px;
+      padding: 0.75rem 0.9rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #17130e;
+      outline: none;
+    }
+
+    .checkbox-line {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #3b3226;
+      cursor: pointer;
+      margin-top: 0.4rem;
+    }
+
+    .checkbox-line input {
+      accent-color: var(--gold-primary);
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Külső Link Gomb a Settings-ben */
+    .link-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f6f3eb;
+      border: 1.5px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #17130e;
+      text-decoration: none;
+      box-shadow: 2.5px 3.5px 7px rgba(120, 100, 75, 0.14), -2px -2px 5px rgba(255, 255, 255, 0.95);
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+
+    .link-btn:hover {
+      background: #fdfaf3;
+      border-color: var(--gold-primary);
+      box-shadow: 0 4px 12px rgba(193, 149, 38, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .link-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 1.5px 2px 4px rgba(120, 100, 75, 0.2);
+    }
+
+    .link-btn svg {
+      fill: var(--gold-dark);
+      flex-shrink: 0;
+    }
+
+    .link-btn .external-arrow {
+      font-size: 1rem;
+      color: var(--gold-dark);
+      margin-left: auto;
+    }
+
+    /* 3. ALSÓ TAB BAR */
+    .tc-tabbar {
+      border-top: 1px solid rgba(195, 175, 145, 0.35);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-top: 0.9rem;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      color: #8c8273;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+
+    .tab-item.active {
+      color: var(--text-gold);
+    }
+
+    .tab-item svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tc-card">
+    <!-- Fejléc -->
+    <header class="tc-header">
+      <div class="tc-logo">
+        <h1>Chord<span>Flow</span></h1>
+        <div class="version-pill">1.2</div>
+      </div>
+      <button class="speaker-btn" id="speaker-btn" title="Némítás / Hang">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- NÉZETEK TARTÁLYA -->
+    <div class="view-container">
+
+      <!-- 1. OLDAL: FŐ METRONÓM & AKKORD NÉZET -->
+      <div class="view-page active" id="page-metronome">
+        <div class="tc-arch-container">
+          <div class="arch-track-curve"></div>
+
+          <!-- Bal oldal: Akkord és Következő pill -->
+          <div class="arch-chord-side">
+            <div class="chord-big" id="curr-chord">C</div>
+            <div class="next-pill">
+              <span class="lbl">KÖVETKEZŐ:</span>
+              <span class="val" id="next-chord">G</span>
+            </div>
+          </div>
+
+          <!-- Jobb oldal: Gitár fogástábla -->
+          <div class="arch-diagram-side" id="diagram-container"></div>
+        </div>
+
+        <!-- Süllyesztett ütéspontok és nyilak -->
+        <div class="tc-strum-row" id="strum-container"></div>
+
+        <!-- Süllyesztett tempó kapszula -->
+        <div class="tc-tempo-capsule">
+          <button class="nudge-btn" onclick="adjustBpm(-1)">−</button>
+          <div class="tempo-number-display" id="bpm-display">80</div>
+          <button class="nudge-btn" onclick="adjustBpm(1)">+</button>
+        </div>
+
+        <!-- Fő funkciógombok -->
+        <div class="tc-action-row">
+          <div class="pill-btn" id="meter-btn" onclick="openPage('page-meter')">
+            <span class="tag">METER / SUB</span>
+            <span class="val" id="meter-val-display">4/4 • ♫</span>
+          </div>
+
+          <button class="play-gold-btn" id="play-btn">
+            <div class="play-icon-shape"></div>
+          </button>
+
+          <div class="pill-btn" id="tap-btn">
+            <span class="tag">TEMPO</span>
+            <span class="val">TAP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. OLDAL: METER & SUBDIVISION -->
+      <div class="view-page" id="page-meter">
+        <div class="page-header">
+          <div class="page-title">Meter & Subdivision</div>
+          <div class="close-icon-btn" onclick="openPage('page-metronome')">✕</div>
+        </div>
+        <div class="page-divider"></div>
+
+        <div class="section-title">BEAT PATTERN (TAP: ACCENT ▲, NORMAL •, MUTE ✕)</div>
+        <div class="beat-pattern-row" id="beat-pattern-container"></div>
+
+        <div class="section-title">TIME SIGNATURE</div>
+        <div class="grid-3" id="time-sig-grid">
+          <div class="grid-pill" onclick="setTimeSig('2/4', 2)">
+            <span class="p-title">2/4</span>
+          </div>
+          <div class="grid-pill" onclick="setTimeSig('3/4', 3)">
+            <span class="p-title">3/4</span>
+          </div>
+          <div class="grid-pill active" onclick="setTimeSig('4/4', 4)">
+            <span class="p-title">4/4</span>
+          </div>
+          <div class="grid-pill" onclick="setTimeSig('6/8', 6)">
+            <span class="p-title">6/8</span>
+          </div>
+          <div class="grid-pill" onclick="setTimeSig('7/8', 7)">
+            <span class="p-title">7/8</span>
+          </div>
+          <div class="grid-pill" onclick="setTimeSig('None', 4)">
+            <span class="p-title">None</span>
+          </div>
+        </div>
+
+        <div class="section-title">SUBDIVISION</div>
+        <div class="grid-3" id="subdiv-grid">
+          <div class="grid-pill" onclick="setSubdivision('quarter', 1)">
+            <span class="p-title">Quarter</span>
+            <span class="p-sub">♩</span>
+          </div>
+          <div class="grid-pill active" onclick="setSubdivision('8th', 2)">
+            <span class="p-title">8th</span>
+            <span class="p-sub">♫</span>
+          </div>
+          <div class="grid-pill" onclick="setSubdivision('triplet', 3)">
+            <span class="p-title">Triplet</span>
+            <span class="p-sub">3-let</span>
+          </div>
+          <div class="grid-pill" onclick="setSubdivision('16th', 4)">
+            <span class="p-title">16th</span>
+            <span class="p-sub">♬</span>
+          </div>
+          <div class="grid-pill" onclick="setSubdivision('sextuplet', 6)">
+            <span class="p-title">Sextuplet</span>
+            <span class="p-sub">6-let</span>
+          </div>
+          <div class="grid-pill" onclick="setSubdivision('32nd', 8)">
+            <span class="p-title">32nd</span>
+            <span class="p-sub">32th</span>
+          </div>
+        </div>
+
+        <div class="section-title">CHORD FREQUENCY (HÁNY ÜTEMENKÉNT VÁLTON?)</div>
+        <div class="grid-3">
+          <div class="grid-pill" onclick="setChordBars(1, this)"><span class="p-title">1 Bar</span></div>
+          <div class="grid-pill active" onclick="setChordBars(2, this)"><span class="p-title">2 Bars</span></div>
+          <div class="grid-pill" onclick="setChordBars(4, this)"><span class="p-title">4 Bars</span></div>
+        </div>
+      </div>
+
+      <!-- 3. OLDAL: PRACTICE & AKKORDOK -->
+      <div class="view-page" id="page-practice">
+        <div class="page-header">
+          <div class="page-title">Practice & Chords</div>
+          <div class="close-icon-btn" onclick="openPage('page-metronome')">✕</div>
+        </div>
+        <div class="page-divider"></div>
+
+        <div class="form-group">
+          <label>Stílus előbeállítás</label>
+          <select id="preset-select" onchange="onPresetChange(this.value)">
+            <option value="open">Kezdő nyitott akkordok (C, G, D, Em, Am, E, A)</option>
+            <option value="pop">Népszerű 4-akkordos Pop (C, G, Am, F)</option>
+            <option value="barre">Barre akkordok (F, Bm, F#m, C#m, B)</option>
+            <option value="blues">Blues hetesek (A7, D7, E7, B7)</option>
+            <option value="jazz">Jazz ii-V-I (Dm7, G7, Cmaj7, Am7)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Akkordkészlet (vesszővel vagy szóközzel)</label>
+          <input type="text" id="chord-pool-input" value="C, G, D, Em, Am, E, A" oninput="parseChords()">
+        </div>
+
+        <div class="form-group">
+          <label>Pengetési stílus</label>
+          <select id="strum-style-select" onchange="setStrumStyle(this.value)">
+            <option value="alternate">TempoCoach váltott (↓ ↑ ↓ ↑ ↓ ↑ ↓ ↑)</option>
+            <option value="down">Csak lefelé (↓ · ↓ · ↓ · ↓ ·)</option>
+            <option value="island">Pop / Akusztikus (↓ · ↓ ↑ · ↑ ↓ ↑)</option>
+          </select>
+        </div>
+
+        <label class="checkbox-line">
+          <input type="checkbox" id="no-repeat" checked>
+          Ne sorsoljon egymás után kétszer ugyanazt
+        </label>
+      </div>
+
+      <!-- 4. OLDAL: SETTINGS (Külső link gombbal) -->
+      <div class="view-page" id="page-settings">
+        <div class="page-header">
+          <div class="page-title">Settings</div>
+          <div class="close-icon-btn" onclick="openPage('page-metronome')">✕</div>
+        </div>
+        <div class="page-divider"></div>
+
+        <label class="checkbox-line" style="margin-bottom: 1.5rem;">
+          <input type="checkbox" id="mute-sound-check" onchange="toggleMuteFromCheck(this.checked)">
+          Némítás (csak vizuális metronóm és akkordváltás)
+        </label>
+
+        <div class="form-group">
+          <label>Metronóm hangkarakter</label>
+          <select id="pitch-select">
+            <option value="high">Klasszikus kattanás</option>
+            <option value="medium" selected>Standard elektronikus csipogás</option>
+            <option value="low">Mély tompa ütés</option>
+          </select>
+        </div>
+
+        <!-- Külső Metronóm link gomb -->
+        <div class="form-group" style="margin-top: 1.6rem;">
+          <label>Külső alkalmazás</label>
+          <a href="https://djanoska.github.io/metronome/" target="_blank" rel="noopener noreferrer" class="link-btn">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path d="M12 2L2 21h20L12 2zm0 3.8l6.84 13.2H5.16L12 5.8z"/>
+              <path d="M11 10h2v6h-2z" fill="var(--gold-primary)"/>
+            </svg>
+            <span>TempoCoach Metronome</span>
+            <span class="external-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ALSÓ TAB BAR (3 arányos fül) -->
+    <div class="tc-tabbar">
+      <div class="tab-item active" id="tab-metronome" onclick="openPage('page-metronome', 'tab-metronome')">
+        <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 4.2l7.53 13H4.47L12 6.2z"/></svg>
+        <span>Metronome</span>
+      </div>
+      <div class="tab-item" id="tab-practice" onclick="openPage('page-practice', 'tab-practice')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span>Practice</span>
+      </div>
+      <div class="tab-item" id="tab-settings" onclick="openPage('page-settings', 'tab-settings')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span>Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 1. AKKORD TÁBLÁZAT RAJZOLÓ (SVG) */
+    const CHORD_DB = {
+      "C":     { frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] },
+      "G":     { frets: [3, 2, 0, 0, 0, 3], fingers: [2, 1, 0, 0, 0, 3] },
+      "D":     { frets: [-1, -1, 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2] },
+      "Em":    { frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
+      "Am":    { frets: [-1, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
+      "E":     { frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0] },
+      "A":     { frets: [-1, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0] },
+      "F":     { frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], barre: { fret: 1, from: 1, to: 6 } },
+      "Dm":    { frets: [-1, -1, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
+      "Bm":    { frets: [-1, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1], barre: { fret: 2, from: 1, to: 5 } },
+      "B":     { frets: [-1, 2, 4, 4, 4, 2], fingers: [0, 1, 2, 3, 4, 1], barre: { fret: 2, from: 1, to: 5 } },
+      "F#m":   { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], barre: { fret: 2, from: 1, to: 6 } },
+      "C#m":   { frets: [-1, 4, 6, 6, 5, 4], fingers: [0, 1, 3, 4, 2, 1], baseFret: 4, barre: { fret: 4, from: 1, to: 5 } },
+      "A7":    { frets: [-1, 0, 2, 0, 2, 0], fingers: [0, 0, 1, 0, 2, 0] },
+      "D7":    { frets: [-1, -1, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
+      "E7":    { frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
+      "G7":    { frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
+      "B7":    { frets: [-1, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
+      "Cmaj7": { frets: [-1, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+      "Dm7":   { frets: [-1, -1, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1], barre: { fret: 1, from: 1, to: 2 } }
+    };
+
+    const PRESETS = {
+      open: ["C", "G", "D", "Em", "Am", "E", "A"],
+      pop: ["C", "G", "Am", "F"],
+      barre: ["F", "Bm", "F#m", "C#m", "B"],
+      blues: ["A7", "D7", "E7", "B7"],
+      jazz: ["Dm7", "G7", "Cmaj7", "Am7"]
+    };
+
+    function renderDiagram(chordName) {
+      const data = CHORD_DB[chordName];
+      const container = document.getElementById("diagram-container");
+      if (!data) {
+        container.innerHTML = "";
+        return;
+      }
+
+      const w = 120, h = 135;
+      const startX = 18, startY = 22;
+      const strSp = 17, fretSp = 22;
+      const baseFret = data.baseFret || 1;
+
+      let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+
+      if (baseFret === 1) {
+        svg += `<rect x="${startX}" y="${startY}" width="${5 * strSp}" height="4" fill="#3c3022" rx="1.5"/>`;
+      } else {
+        svg += `<text x="${startX - 14}" y="${startY + 15}" fill="#b88a31" font-size="9" font-weight="bold">${baseFret}fr</text>`;
+        svg += `<line x1="${startX}" y1="${startY}" x2="${startX + 5 * strSp}" y2="${startY}" stroke="#5c4a35" stroke-width="2"/>`;
+      }
+
+      for (let f = 1; f <= 4; f++) {
+        const y = startY + f * fretSp;
+        svg += `<line x1="${startX}" y1="${y}" x2="${startX + 5 * strSp}" y2="${y}" stroke="#d3c7b5" stroke-width="1.2"/>`;
+      }
+
+      for (let s = 0; s < 6; s++) {
+        const x = startX + s * strSp;
+        svg += `<line x1="${x}" y1="${startY}" x2="${x}" y2="${startY + 4 * fretSp}" stroke="#6e5e4a" stroke-width="${1 + (5 - s) * 0.25}"/>`;
+      }
+
+      data.frets.forEach((fret, sIdx) => {
+        const x = startX + sIdx * strSp;
+        const y = startY - 8;
+        if (fret === -1) {
+          svg += `<text x="${x}" y="${y}" fill="#d15151" font-size="10" font-weight="900" text-anchor="middle" dominant-baseline="central">✕</text>`;
+        } else if (fret === 0) {
+          svg += `<circle cx="${x}" cy="${y}" r="3.2" fill="none" stroke="#2e8b57" stroke-width="1.5"/>`;
+        }
+      });
+
+      if (data.barre) {
+        const b = data.barre;
+        const bFret = b.fret - (baseFret - 1);
+        const y = startY + (bFret - 0.5) * fretSp;
+        const x1 = startX + (6 - b.to) * strSp;
+        const x2 = startX + (6 - b.from) * strSp;
+        svg += `<rect x="${x1 - 4.5}" y="${y - 4.5}" width="${(x2 - x1) + 9}" height="9" rx="4.5" fill="#c19526"/>`;
+      }
+
+      data.frets.forEach((fret, sIdx) => {
+        if (fret > 0) {
+          const relFret = fret - (baseFret - 1);
+          if (relFret >= 1 && relFret <= 4) {
+            const x = startX + sIdx * strSp;
+            const y = startY + (relFret - 0.5) * fretSp;
+            const finger = data.fingers ? data.fingers[sIdx] : "";
+            svg += `<circle cx="${x}" cy="${y}" r="6.5" fill="#c19526"/>`;
+            if (finger) {
+              svg += `<text x="${x}" y="${y}" fill="#1a1409" font-size="8.5" font-weight="800" text-anchor="middle" dominant-baseline="central">${finger}</text>`;
+            }
+          }
+        }
+      });
+
+      svg += `</svg>`;
+      container.innerHTML = svg;
+    }
+
+    /* 2. ÁLLAPOTOK */
+    let bpm = 80;
+    let isRunning = false;
+    let beatsPerBar = 4;
+    let timeSignatureLabel = "4/4";
+    let subDivisionType = "8th";
+    let subDivisionStepsPerBeat = 2;
+    let barsPerChord = 2;
+    let chordPool = [...PRESETS.open];
+    let currentChord = "C";
+    let nextChord = "G";
+    let isMuted = false;
+
+    let beatPattern = ['accent', 'normal', 'normal', 'normal'];
+
+    const STRUM_STYLES = {
+      alternate: [
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" },
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" },
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" },
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" }
+      ],
+      down: [
+        { type: "D", arrow: "↓" }, { type: "-", arrow: "·" },
+        { type: "D", arrow: "↓" }, { type: "-", arrow: "·" },
+        { type: "D", arrow: "↓" }, { type: "-", arrow: "·" },
+        { type: "D", arrow: "↓" }, { type: "-", arrow: "·" }
+      ],
+      island: [
+        { type: "D", arrow: "↓" }, { type: "-", arrow: "·" },
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" },
+        { type: "-", arrow: "·" }, { type: "U", arrow: "↑" },
+        { type: "D", arrow: "↓" }, { type: "U", arrow: "↑" }
+      ]
+    };
+
+    let activeStrum = [...STRUM_STYLES.alternate];
+
+    let audioCtx = null;
+    let nextNoteTime = 0.0;
+    let currentStep = 0;
+    let currentBar = 0;
+    const lookahead = 25.0;
+    const scheduleAheadTime = 0.1;
+    let timerID = null;
+
+    /* DOM Elemek */
+    const currChordEl = document.getElementById("curr-chord");
+    const nextChordEl = document.getElementById("next-chord");
+    const bpmDisplay = document.getElementById("bpm-display");
+    const playBtn = document.getElementById("play-btn");
+    const meterValDisplay = document.getElementById("meter-val-display");
+    const speakerBtn = document.getElementById("speaker-btn");
+    const strumContainer = document.getElementById("strum-container");
+    const beatPatternContainer = document.getElementById("beat-pattern-container");
+    const chordPoolInput = document.getElementById("chord-pool-input");
+    const noRepeatCheckbox = document.getElementById("no-repeat");
+
+    /* 3. NÉZETVÁLTÁS ÉS TAB BAR KEZELŐ */
+    function openPage(pageId, tabId = null) {
+      document.querySelectorAll(".view-page").forEach(p => p.classList.remove("active"));
+      const target = document.getElementById(pageId);
+      if (target) target.classList.add("active");
+
+      if (tabId) {
+        document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
+        const tab = document.getElementById(tabId);
+        if (tab) tab.classList.add("active");
+      } else if (pageId === "page-metronome") {
+        document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
+        document.getElementById("tab-metronome").classList.add("active");
+      }
+    }
+
+    /* 4. BEAT PATTERN & ÜTÉSPONTOK */
+    function buildBeatPatternUI() {
+      beatPatternContainer.innerHTML = "";
+      for (let i = 0; i < beatsPerBar; i++) {
+        const item = beatPattern[i] || 'normal';
+        const circle = document.createElement("div");
+        circle.className = `pattern-circle ${item === 'accent' ? 'active' : ''}`;
+
+        const num = document.createElement("span");
+        num.className = "num";
+        num.textContent = `${i + 1}`;
+        circle.appendChild(num);
+
+        const sym = document.createElement("span");
+        sym.className = "sym";
+        sym.textContent = item === 'accent' ? '▲' : (item === 'mute' ? '✕' : '•');
+        circle.appendChild(sym);
+
+        circle.addEventListener("click", () => {
+          if (beatPattern[i] === 'accent') beatPattern[i] = 'normal';
+          else if (beatPattern[i] === 'normal') beatPattern[i] = 'mute';
+          else beatPattern[i] = 'accent';
+          buildBeatPatternUI();
+        });
+
+        beatPatternContainer.appendChild(circle);
+      }
+    }
+
+    function buildStrumTrack() {
+      strumContainer.innerHTML = "";
+      const totalSteps = beatsPerBar * subDivisionStepsPerBeat;
+
+      for (let i = 0; i < totalSteps; i++) {
+        const col = document.createElement("div");
+        col.className = `strum-column ${i % subDivisionStepsPerBeat === 0 ? "large" : "small"}`;
+        col.id = `strum-col-${i}`;
+
+        const dot = document.createElement("div");
+        dot.className = "recessed-dot";
+        col.appendChild(dot);
+
+        const strumItem = activeStrum[i % activeStrum.length] || { type: "D", arrow: "↓" };
+        const arrow = document.createElement("div");
+        arrow.className = `arrow-icon ${strumItem.type === "D" ? "down" : (strumItem.type === "U" ? "up" : "rest")}`;
+        arrow.textContent = strumItem.arrow;
+        col.appendChild(arrow);
+
+        col.addEventListener("click", () => {
+          if (strumItem.type === "D") {
+            strumItem.type = "U";
+            strumItem.arrow = "↑";
+          } else if (strumItem.type === "U") {
+            strumItem.type = "-";
+            strumItem.arrow = "·";
+          } else {
+            strumItem.type = "D";
+            strumItem.arrow = "↓";
+          }
+          buildStrumTrack();
+        });
+
+        strumContainer.appendChild(col);
+      }
+    }
+
+    /* 5. METER & SUBDIVISION VÁLASZTÓK */
+    function setTimeSig(sig, count) {
+      timeSignatureLabel = sig;
+      beatsPerBar = count;
+
+      document.querySelectorAll("#time-sig-grid .grid-pill").forEach(p => p.classList.remove("active"));
+      event.currentTarget.classList.add("active");
+
+      beatPattern = [];
+      for (let i = 0; i < beatsPerBar; i++) beatPattern.push(i === 0 ? 'accent' : 'normal');
+
+      updateMeterDisplay();
+      buildBeatPatternUI();
+      buildStrumTrack();
+    }
+
+    function setSubdivision(type, steps) {
+      subDivisionType = type;
+      subDivisionStepsPerBeat = steps;
+
+      document.querySelectorAll("#subdiv-grid .grid-pill").forEach(p => p.classList.remove("active"));
+      event.currentTarget.classList.add("active");
+
+      updateMeterDisplay();
+      buildStrumTrack();
+    }
+
+    function setChordBars(bars, btn) {
+      barsPerChord = bars;
+      btn.parentElement.querySelectorAll(".grid-pill").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      updateMeterDisplay();
+    }
+
+    function updateMeterDisplay() {
+      const subSymbol = subDivisionStepsPerBeat === 1 ? '♩' : (subDivisionStepsPerBeat === 2 ? '♫' : `${subDivisionStepsPerBeat}x`);
+      meterValDisplay.textContent = `${timeSignatureLabel} • ${subSymbol}`;
+    }
+
+    function setStrumStyle(style) {
+      activeStrum = [...STRUM_STYLES[style]];
+      buildStrumTrack();
+    }
+
+    /* 6. METRONÓM MOTOR (Audacity/Valeton védett) */
+    function initAudio() {
+      if (!audioCtx) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          audioCtx = null;
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+    }
+
+    function playClick(time, isAccent, isMutedStep) {
+      if (isMuted || !audioCtx || isMutedStep) return;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(isAccent ? 1000 : 650, time);
+
+        gain.gain.setValueAtTime(0.75, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(time);
+        osc.stop(time + 0.035);
+      } catch (e) {}
+    }
+
+    function pickNextChord(exclude) {
+      if (chordPool.length <= 1) return chordPool[0] || "C";
+      let pool = chordPool;
+      if (noRepeatCheckbox.checked && exclude) {
+        pool = chordPool.filter(c => c !== exclude);
+        if (pool.length === 0) pool = chordPool;
+      }
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function nextStep() {
+      const secondsPerBeat = 60.0 / bpm;
+      const secondsPerStep = secondsPerBeat / subDivisionStepsPerBeat;
+      nextNoteTime += secondsPerStep;
+
+      const totalStepsPerBar = beatsPerBar * subDivisionStepsPerBeat;
+      currentStep++;
+      if (currentStep >= totalStepsPerBar) {
+        currentStep = 0;
+        currentBar++;
+
+        if (currentBar >= barsPerChord) {
+          currentBar = 0;
+          currentChord = nextChord;
+          nextChord = pickNextChord(currentChord);
+        }
+      }
+    }
+
+    function drawBeat(step, cChord, nChord) {
+      const totalStepsPerBar = beatsPerBar * subDivisionStepsPerBeat;
+      for (let i = 0; i < totalStepsPerBar; i++) {
+        const col = document.getElementById(`strum-col-${i}`);
+        if (col) {
+          if (i === step) col.classList.add("active");
+          else col.classList.remove("active");
+        }
+      }
+
+      if (currChordEl.textContent !== cChord) {
+        currChordEl.textContent = cChord;
+        currChordEl.style.transform = "scale(1.08)";
+        setTimeout(() => currChordEl.style.transform = "scale(1)", 90);
+        renderDiagram(cChord);
+      }
+      nextChordEl.textContent = nChord;
+    }
+
+    function scheduler() {
+      const now = audioCtx ? audioCtx.currentTime : performance.now() / 1000;
+      while (nextNoteTime < now + scheduleAheadTime) {
+        const beatIndex = Math.floor(currentStep / subDivisionStepsPerBeat);
+        const isSubdivisionTick = (currentStep % subDivisionStepsPerBeat !== 0);
+        const beatType = beatPattern[beatIndex] || 'normal';
+
+        const isAccent = (currentStep === 0) || (beatType === 'accent' && !isSubdivisionTick);
+        const isMutedStep = (beatType === 'mute');
+
+        playClick(nextNoteTime, isAccent, isMutedStep);
+
+        const sStep = currentStep;
+        const sCurrent = currentChord;
+        const sNext = nextChord;
+        const delay = Math.max(0, (nextNoteTime - now) * 1000);
+
+        setTimeout(() => {
+          if (isRunning) drawBeat(sStep, sCurrent, sNext);
+        }, delay);
+
+        nextStep();
+      }
+      timerID = setTimeout(scheduler, lookahead);
+    }
+
+    /* 7. INDÍTÁS / LEÁLLÍTÁS */
+    function togglePlay() {
+      if (isRunning) stop();
+      else start();
+    }
+
+    function start() {
+      initAudio();
+      parseChords();
+
+      isRunning = true;
+      currentStep = 0;
+      currentBar = 0;
+
+      currentChord = pickNextChord("");
+      nextChord = pickNextChord(currentChord);
+
+      drawBeat(0, currentChord, nextChord);
+
+      const base = audioCtx ? audioCtx.currentTime : performance.now() / 1000;
+      nextNoteTime = base + 0.05;
+      scheduler();
+
+      playBtn.classList.add("running");
+    }
+
+    function stop() {
+      isRunning = false;
+      clearTimeout(timerID);
+      playBtn.classList.remove("running");
+
+      const totalSteps = beatsPerBar * subDivisionStepsPerBeat;
+      for (let i = 0; i < totalSteps; i++) {
+        const col = document.getElementById(`strum-col-${i}`);
+        if (col) col.classList.remove("active");
+      }
+    }
+
+    function adjustBpm(diff) {
+      bpm = Math.min(300, Math.max(30, bpm + diff));
+      bpmDisplay.textContent = bpm;
+    }
+
+    function parseChords() {
+      const raw = chordPoolInput.value;
+      chordPool = raw.split(/[, \s]+/).map(c => c.trim()).filter(c => c.length > 0);
+    }
+
+    function onPresetChange(val) {
+      chordPoolInput.value = PRESETS[val].join(", ");
+      parseChords();
+    }
+
+    function toggleMuteFromCheck(checked) {
+      isMuted = checked;
+      speakerBtn.classList.toggle("muted", isMuted);
+    }
+
+    speakerBtn.addEventListener("click", () => {
+      isMuted = !isMuted;
+      speakerBtn.classList.toggle("muted", isMuted);
+      document.getElementById("mute-sound-check").checked = isMuted;
+    });
+
+    playBtn.addEventListener("click", togglePlay);
+
+    // Tap Tempo
+    let tapTimes = [];
+    document.getElementById("tap-btn").addEventListener("click", () => {
+      const now = performance.now();
+      tapTimes.push(now);
+      if (tapTimes.length > 4) tapTimes.shift();
+
+      if (tapTimes.length >= 2) {
+        let diffs = [];
+        for (let i = 1; i < tapTimes.length; i++) {
+          diffs.push(tapTimes[i] - tapTimes[i - 1]);
+        }
+        const avg = diffs.reduce((a, b) => a + b) / diffs.length;
+        const calc = Math.round(60000 / avg);
+        if (calc >= 30 && calc <= 300) {
+          bpm = calc;
+          bpmDisplay.textContent = bpm;
+        }
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && e.target.tagName !== "INPUT") {
+        e.preventDefault();
+        togglePlay();
+      }
+    });
+
+    // Induló felépítés
+    buildBeatPatternUI();
+    buildStrumTrack();
+    parseChords();
+    renderDiagram("C");
+    updateMeterDisplay();
+  </script>
+</body>
+</html>
